@@ -1,7 +1,9 @@
 package com.example.aop_part3_chapter05
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -16,7 +18,6 @@ import com.yuyakaido.android.cardstackview.CardStackView
 import com.yuyakaido.android.cardstackview.Direction
 
 class LikeActivity: AppCompatActivity(), CardStackListener {
-
     private var auth: FirebaseAuth = FirebaseAuth.getInstance()
     private lateinit var usersDB: DatabaseReference
 
@@ -48,6 +49,8 @@ class LikeActivity: AppCompatActivity(), CardStackListener {
         })
 
         initCardStackView()
+        initSignOutButton()
+        initMatchedListButton()
     }
 
     private fun initCardStackView() {
@@ -55,6 +58,22 @@ class LikeActivity: AppCompatActivity(), CardStackListener {
 
         stackView.layoutManager = manager
         stackView.adapter = adapter
+    }
+
+    private fun initSignOutButton() {
+        val signOutButton = findViewById<Button>(R.id.signOutButton)
+        signOutButton.setOnClickListener {
+            auth.signOut()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+        }
+    }
+
+    private fun initMatchedListButton() {
+        val matchListButton = findViewById<Button>(R.id.matchListButton)
+        matchListButton.setOnClickListener {
+            startActivity(Intent(this, MatchedUserActivity::class.java))
+        }
     }
 
     private fun getUnselectedUsers() {
@@ -116,7 +135,6 @@ class LikeActivity: AppCompatActivity(), CardStackListener {
         user["name"] = name
         currentUserDB.updateChildren(user)
 
-        //todo 유저정보를 가져와라
         getUnselectedUsers()
     }
 
@@ -150,6 +168,7 @@ class LikeActivity: AppCompatActivity(), CardStackListener {
             .setValue(true)
 
         //todo 매칭이 된 시점을 봐야한다.
+        saveMatchIfOtherUserLikedMe(card.userId)
 
         Toast.makeText(this, "${card.name}님을 Like 하셨습니다", Toast.LENGTH_SHORT).show()
     }
@@ -165,6 +184,31 @@ class LikeActivity: AppCompatActivity(), CardStackListener {
             .setValue(true)
 
         Toast.makeText(this, "${card.name}님을 disLike 하셨습니다", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun saveMatchIfOtherUserLikedMe(otherUserId: String) {
+        val otherUserDB = usersDB.child(getCurrentUserID()).child("likedBy").child("like").child(otherUserId)
+        otherUserDB.addListenerForSingleValueEvent(object: ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.value == true) {
+                    usersDB.child(getCurrentUserID())
+                        .child("likedBy")
+                        .child("match")
+                        .child(otherUserId)
+                        .setValue(true)
+
+                    usersDB.child(otherUserId)
+                        .child("likedBy")
+                        .child("match")
+                        .child(getCurrentUserID())
+                        .setValue(true)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+
+            }
+        })
     }
 
     override fun onCardRewound() {}
