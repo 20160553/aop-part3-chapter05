@@ -8,6 +8,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.aop_part3_chapter05.DBKey.Companion.LIKED_BY
+import com.example.aop_part3_chapter05.DBKey.Companion.MATCH
+import com.example.aop_part3_chapter05.DBKey.Companion.NAME
+import com.example.aop_part3_chapter05.DBKey.Companion.USERS
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.google.firebase.database.ktx.database
@@ -25,14 +29,14 @@ class MatchedUserActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_match)
 
-        usersDB = Firebase.database.reference.child("Users")
+        usersDB = Firebase.database.reference.child(USERS)
 
         initMatchedUserRecyclerView()
         getMatchUsers()
     }
 
     private fun getMatchUsers() {
-        val matchedDB = usersDB.child(getCurrentUserID()).child("likedBy").child("match")
+        val matchedDB = usersDB.child(getCurrentUserID()).child(LIKED_BY).child(MATCH)
 
         matchedDB.addChildEventListener(object: ChildEventListener{
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
@@ -58,7 +62,7 @@ class MatchedUserActivity: AppCompatActivity() {
     private fun getUserByKey(userId: String) {
         usersDB.child(userId).addListenerForSingleValueEvent(object: ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                cardItems.add(CardItem(userId, snapshot.child("name").value.toString()))
+                cardItems.add(CardItem(userId, snapshot.child(NAME).value.toString()))
                 adapter.submitList(cardItems)
             }
 
